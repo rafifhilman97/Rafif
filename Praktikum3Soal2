@@ -6,33 +6,36 @@
 
 #include <stdio.h>
 
-void tuangAir(int ukuranA, int ukuranB, int *gelasA, int *gelasB, int *langkah){
-    if(ukuranA < ukuranB){
-        *gelasB = *gelasB + *gelasA;
-        if(*gelasB > ukuranB){
-            int sisa = *gelasB - ukuranB; 
-            *gelasB = ukuranB;
-            *gelasA = sisa;
-        }
-        else{
-            *gelasA = 0;            
-        }
+int minInt(int a, int b) {
+    if (a<b){
+        return a;
     }
-    else if (ukuranA > ukuranB){
-        *gelasB = ukuranB;
-        *gelasA = *gelasA - ukuranB;
+    else{
+        return b;
     }
-    *langkah++;
 }
 
-void isiAir(int *A, int ukuran, int *langkah){
-    *A = ukuran;
-    *langkah++;
+// Menuangkan isi dari *sumber ke *tujuan (kapasitas tujuan = kapTujuan)
+void tuang(int *sumber, int *tujuan, int kapTujuan, int *langkah) {
+    int ruangTersedia = kapTujuan - *tujuan;
+    if (*sumber <= ruangTersedia) {
+        *tujuan += *sumber;
+        *sumber = 0;
+    } else {
+        *sumber -= ruangTersedia;
+        *tujuan = kapTujuan;
+    }
+    (*langkah)++;
 }
 
-void buangAir(int *A, int *langkah){
-    *A = 0;
-    *langkah++;
+void isiPenuh(int *gelas, int ukuran, int *langkah){
+    *gelas = ukuran;
+    (*langkah)++;
+}
+
+void kosongkan(int *gelas, int *langkah){
+    *gelas = 0;
+    (*langkah)++;
 }
 
 int NilaiFPB(int ukuranA, int ukuranB){ // [1]
@@ -45,39 +48,43 @@ int NilaiFPB(int ukuranA, int ukuranB){ // [1]
     return ukuranB;
 }
 
-int langkahMinimum(int ukuranA, int ukuranB, int takaran){
+// Simulasi satu arah: isi/tuang dari gelas1 ke gelas2
+int simulasiSatuArah(int kap1, int kap2, int target) {
+    int gelas1 = 0, gelas2 = 0;
     int langkah = 0;
-    int gelasA = ukuranA;
-    int gelasB = ukuranB;
+    
+    while (gelas1 != target && gelas2 != target) {
+        if (gelas1 == 0) {
+            isiPenuh(&gelas1, kap1, &langkah);
+        } else if (gelas2 == kap2) {
+            kosongkan(&gelas2, &langkah);
+        } else {
+            tuang(&gelas1, &gelas2, kap2, &langkah);
+        }
+    }
+    return langkah;
+}
+
+int langkahMinimum(int ukuranA, int ukuranB, int takaran){
     int FPB = NilaiFPB(ukuranA, ukuranB);
     
     if (ukuranA == takaran || ukuranB == takaran){
-        langkah = 1;
-        return langkah;
+        return 1;
     }
     else if (ukuranA < takaran && ukuranB < takaran){
-        langkah = -1;
-        return langkah;
+        return -1;
     }
     else if(ukuranA == ukuranB && ukuranA != takaran){
-        langkah = -1;
-        return langkah;
+        return -1;
     }
-    else if(takaran % FPB != 0){ 
-        langkah = -1;
-        return langkah;
+    else if(takaran % FPB != 0){
+        return -1;
     }
     else {
-        int langkah1 = 0;
-        int langkah2 = 0;
-        while (gelasA != takaran || gelasB != takaran){
-            isiAir(&gelasA, ukuranA, &langkah1);
-            tuangAir(ukuranA, ukuranB, &gelasA, &gelasB, &langkah);
-        }
-        
+        int arahAB = simulasiSatuArah(ukuranA, ukuranB, takaran);
+        int arahBA = simulasiSatuArah(ukuranB, ukuranA, takaran);
+        return minInt(arahAB, arahBA);
     }
-
-    return langkah;
 }
 
 int main(void){
